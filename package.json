@@ -1,0 +1,19 @@
+{
+  "name": "afterlight-bbs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "余烬公告板：可离线运行的社区互助 BBS 原型",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "test": "node --test",
+    "build": "node scripts/build.mjs",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "vite": "^7.2.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

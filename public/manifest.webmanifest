@@ -1,0 +1,12 @@
+{
+  "name": "Afterlight BBS · 余烬公告板",
+  "short_name": "余烬 BBS",
+  "description": "为离线互助复活的社区公告板",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101b20",
+  "theme_color": "#101b20",
+  "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]
+}

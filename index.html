@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101b20" />
+    <meta name="description" content="余烬公告板：为离线互助复活的社区 BBS。发布求助、发现资源，把社区重新连接。" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Afterlight BBS · 余烬公告板</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳转到公告板</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="公告板导航">
+        <a class="brand" href="./" aria-label="余烬公告板首页"><span class="brand-icon" aria-hidden="true">✳</span><span>AFTERLIGHT<span class="brand-sub">COMMUNITY BBS / 余烬</span></span></a>
+        <div class="node-card"><span class="eyebrow">YOUR LOCAL NODE</span><strong><span class="signal-dot"></span> 邻里节点 · 001</strong><span id="connection" class="muted" role="status">正在检查连接…</span></div>
+        <p class="nav-label">COMMUNITY CHANNELS</p>
+        <nav id="kind-nav" class="channel-nav" aria-label="信息类型">
+          <button type="button" data-kind="all" class="nav-button active" aria-pressed="true"><span><span aria-hidden="true">▦</span> 全部公告</span><span id="count-all" class="nav-count">0</span></button>
+          <button type="button" data-kind="request" class="nav-button" aria-pressed="false"><span><span aria-hidden="true">↗</span> 我需要帮助</span><span id="count-request" class="nav-count">0</span></button>
+          <button type="button" data-kind="offer" class="nav-button" aria-pressed="false"><span><span aria-hidden="true">↙</span> 我可以提供</span><span id="count-offer" class="nav-count">0</span></button>
+        </nav>
+        <div class="sidebar-tools"><p class="nav-label">KEEP THE SIGNAL ALIVE</p><button id="export-button" class="tool-button" type="button"><span aria-hidden="true">↓</span> 导出节点数据</button><button id="import-button" class="tool-button" type="button"><span aria-hidden="true">↑</span> 导入邻居的数据</button><input id="import-file" type="file" accept="application/json,.json" hidden /><button id="reset-button" class="tool-button quiet" type="button"><span aria-hidden="true">↺</span> 恢复示例公告</button></div>
+        <div class="sidebar-bottom"><div class="pixel-line" aria-hidden="true">▂▃▆▃▇▅▂▅▇▃▂▅▃</div><p>网络可以掉线。<br />邻里之间的联系不会。</p><span class="eyebrow">EST. 2026 · BUILT TO RECONNECT</span></div>
+      </aside>
+      <div class="workspace">
+        <header class="topbar"><span><span class="terminal-prompt">&gt;_</span> 不论信号强弱，我们都在这里。</span><span class="topbar-tag">LOCAL-FIRST <span aria-hidden="true">↗</span></span></header>
+        <main id="main" class="main">
+          <section class="heading-row"><div><p class="eyebrow">A LITTLE SIGNAL. A LOT OF HUMANITY.</p><h1>把社区，重新连接<span class="green">。</span></h1><p class="intro">从一条小小的公告开始，让需要与善意相遇。</p></div><button id="new-button" class="primary-button" type="button"><span aria-hidden="true">＋</span> 发布公告</button></section>
+          <section class="hero-panel" aria-label="关于余烬公告板"><div><div class="hero-label"><span class="signal-dot dark"></span> THE BBS IS BACK. FOR GOOD.</div><h2>旧时代的公告板。<br />新时代的守望相助。</h2><p>求助、分享、找到彼此。数据保存在你的设备中，<br class="desktop-break" />断网仍可读写；用一个文件，把消息带给下一位邻居。</p><span id="offline-ready" class="hero-chip">✦ 本地保存 · 无需登录</span></div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="node center-node">✳</div><div class="node mini-node node-a">＋</div><div class="node mini-node node-b">↗</div><div class="node mini-node node-c">⌂</div><div class="connection-line line-a"></div><div class="connection-line line-b"></div><div class="connection-line line-c"></div><span class="art-caption">NO ONE IS AN ISLAND_</span></div></section>
+          <section class="stats-row" aria-label="节点概况"><div class="stat"><span class="stat-icon amber" aria-hidden="true">↗</span><div><strong id="stat-request">0</strong><span>条求助等待回应</span></div></div><div class="stat"><span class="stat-icon green" aria-hidden="true">↙</span><div><strong id="stat-offer">0</strong><span>份资源可以分享</span></div></div><div class="stat"><span class="stat-icon blue" aria-hidden="true">✓</span><div><strong id="stat-resolved">0</strong><span>条公告已完成</span></div></div></section>
+          <section aria-labelledby="board-title"><div class="board-heading"><div><h2 id="board-title">社区公告板</h2><span id="result-count" class="muted"></span></div><span class="board-sort">最新消息在前 <span aria-hidden="true">↓</span></span></div><div class="filter-row"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索公告、资源或街区…" aria-label="搜索公告" /></label><label class="status-filter"><span class="visually-hidden">公告状态</span><select id="status-filter"><option value="all">全部状态</option><option value="open">进行中</option><option value="resolved">已完成</option></select></label></div><div id="posts" class="posts-grid"></div><div id="empty-state" class="empty-state" hidden><span aria-hidden="true">⌁</span><h3>还没有收到这个频段的消息</h3><p>试试其他关键词，或者发布第一条公告。</p><button id="clear-filters" type="button" class="secondary-button">清除筛选</button></div></section>
+          <footer class="footer"><span>AFTERLIGHT BBS <span class="muted">/ 连接从未消失，只是换了一种方式。</span></span><span>原型演示 · 仅保存在本机，不会实时广播</span></footer>
+          <p class="safety-note">此应用为社区互助原型，不提供实时通信或紧急救援服务。紧急情况请联系当地应急机构；请勿发布敏感个人信息。</p>
+        </main>
+      </div>
+    </div>
+    <dialog id="post-dialog" aria-labelledby="post-dialog-title"><form id="post-form" class="dialog-content"><div class="dialog-heading"><div><p class="eyebrow">SEND A LITTLE SIGNAL</p><h2 id="post-dialog-title">发布一条公告</h2></div><button type="button" class="close-button" data-close="post-dialog" aria-label="关闭发布窗口">×</button></div><p class="muted">说清楚你需要什么，或可以分享什么。公告只保存在这台设备中。</p><fieldset class="kind-options"><legend>公告类型</legend><label><input name="kind" value="request" type="radio" checked /> ↗ 我需要帮助</label><label><input name="kind" value="offer" type="radio" /> ↙ 我可以提供</label></fieldset><label class="field">公告标题<input name="title" required minlength="2" maxlength="80" placeholder="例如：为独居邻居寻找一盏充电灯" /></label><div class="form-columns"><label class="field">资源分类<select id="category-input" name="category" required></select></label><label class="field">所在街区<input name="district" required maxlength="40" placeholder="例如：梧桐街区" list="district-options" /><datalist id="district-options"></datalist></label></div><label class="field">详细说明<textarea name="body" required minlength="5" maxlength="2000" rows="4" placeholder="描述数量、时间、交接地点等，请勿填写敏感信息。"></textarea></label><p id="form-error" class="form-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="secondary-button" data-close="post-dialog">取消</button><button type="submit" class="primary-button">发布到本地节点 ↗</button></div></form></dialog>
+    <dialog id="detail-dialog" aria-labelledby="detail-title"><div class="dialog-content"><div class="dialog-heading"><span id="detail-kind" class="badge"></span><button type="button" class="close-button" data-close="detail-dialog" aria-label="关闭公告详情">×</button></div><h2 id="detail-title"></h2><p id="detail-meta" class="muted"></p><p id="detail-body" class="detail-body"></p><div class="match-section"><p class="eyebrow">CROSSING SIGNALS</p><h3 id="matches-title">可能相遇的资源</h3><p class="muted match-explanation">根据分类、街区和描述在本地匹配；请自行确认是否适用。</p><div id="matches"></div></div><div class="dialog-actions"><button id="resolve-button" class="primary-button" type="button">标记为已完成</button></div></div></dialog>
+    <dialog id="reset-dialog" aria-labelledby="reset-title"><div class="dialog-content"><h2 id="reset-title">恢复示例公告？</h2><p>这会替换此设备中现有的所有公告。建议先导出数据，保留你的记录。</p><div class="dialog-actions"><button class="secondary-button" type="button" data-close="reset-dialog">取消</button><button id="confirm-reset" class="primary-button" type="button">确认恢复示例</button></div></div></dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

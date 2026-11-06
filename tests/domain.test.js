@@ -4,25 +4,25 @@ import { createPost, seedPosts, filterPosts, findMatches, parseImport, mergePost
 
 test('新公告校验、唯一编号与默认状态', () => {
   const input = seedPosts()[0];
-  const first = createPost({ ...input, title: '  求借照明灯  ' });
-  assert.equal(first.title, '求借照明灯');
+  const first = createPost({ ...input, title: '  Spare lantern  ' });
+  assert.equal(first.title, 'Spare lantern');
   assert.equal(first.status, 'open');
   assert.notEqual(first.id, createPost(input).id);
   for (const patch of [{ kind: 'invalid' }, { category: '__proto__' }, { title: ' ' }, { body: 'a' }, { district: '' }]) assert.throws(() => createPost({ ...input, ...patch }));
 });
 
 test('组合搜索遵守类型、状态及多个关键词', () => {
-  const result = filterPosts(seedPosts(), { kind: 'offer', status: 'open', query: '灯塔 露营灯' });
+  const result = filterPosts(seedPosts(), { kind: 'offer', status: 'open', query: 'Lighthouse lanterns' });
   assert.equal(result.length, 1);
   assert.equal(result[0].id, 'demo-2');
-  assert.equal(filterPosts(seedPosts(), { query: '不存在的公告' }).length, 0);
+  assert.equal(filterPosts(seedPosts(), { query: 'xyzzy-no-such-post' }).length, 0);
 });
 
 test('资源匹配排除自己、同类型、已完成及不同分类', () => {
   const posts = seedPosts();
   const matches = findMatches(posts[0], posts);
   assert.equal(matches[0].id, 'demo-2');
-  assert.ok(matches[0].matchReasons.includes('同一街区'));
+  assert.ok(matches[0].matchReasons.includes('Same neighborhood'));
   assert.equal(findMatches({ ...posts[0], status: 'resolved' }, posts).length, 0);
   assert.equal(findMatches(posts[0], [{ ...posts[1], status: 'resolved' }]).length, 0);
 });

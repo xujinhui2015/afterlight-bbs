@@ -6,7 +6,7 @@ const $ = (selector) => document.querySelector(selector);
 const state = { posts: [], kind: 'all', query: '', status: 'all', selectedId: null };
 let toastTimer;
 
-// 用户发布的内容始终通过 textContent 写入，避免把导入数据当作 HTML。
+// User-supplied content is always written via textContent — never injected as HTML.
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -28,7 +28,7 @@ function loadPosts() {
     if (saved === null) savePosts();
   } catch {
     state.posts = seedPosts();
-    notify('本地数据无法读取，已临时展示示例。可用导入功能恢复备份。');
+    notify('Local data could not be read. Showing example posts. Use Import to restore a backup.');
   }
 }
 
@@ -37,7 +37,7 @@ function savePosts(showWarning = true) {
     localStorage.setItem(STORAGE_KEY, serializePosts(state.posts));
     return true;
   } catch {
-    if (showWarning) notify('浏览器无法保存数据。当前变更仅在本次打开期间保留，请立即导出备份。');
+    if (showWarning) notify('Browser could not save data. Changes are only kept for this session — export a backup now.');
     return false;
   }
 }
@@ -47,12 +47,12 @@ function categoryLabel(category) {
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value));
+  return new Intl.DateTimeFormat('en', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value));
 }
 
 function badge(post) {
   const isResolved = post.status === 'resolved';
-  return element('span', `badge ${isResolved ? 'resolved' : post.kind}`, isResolved ? '✓ 已完成' : post.kind === 'request' ? '↗ 需要帮助' : '↙ 可以提供');
+  return element('span', `badge ${isResolved ? 'resolved' : post.kind}`, isResolved ? '✓ Resolved' : post.kind === 'request' ? '↗ Request' : '↙ Offer');
 }
 
 function render() {
@@ -69,7 +69,7 @@ function render() {
     button.setAttribute('aria-pressed', String(active));
   });
   const visible = filterPosts(all, state);
-  $('#result-count').textContent = `${visible.length} 条消息`;
+  $('#result-count').textContent = `${visible.length} post${visible.length !== 1 ? 's' : ''}`;
   $('#empty-state').hidden = visible.length !== 0;
   const fragment = document.createDocumentFragment();
   for (const post of visible) {
@@ -85,11 +85,11 @@ function render() {
     meta.append(location, time);
     const footer = element('div', 'card-footer');
     const matches = post.status === 'open' ? findMatches(post, all) : [];
-    const hint = element('span', `match-hint ${matches.length ? '' : 'no-match'}`, matches.length ? `✦ ${matches.length} 条可能匹配` : post.status === 'resolved' ? '已由本机标记完成' : '等待下一段善意的信号');
-    const openButton = element('button', 'detail-button', '查看详情 ↗');
+    const hint = element('span', `match-hint ${matches.length ? '' : 'no-match'}`, matches.length ? `✦ ${matches.length} possible match${matches.length !== 1 ? 'es' : ''}` : post.status === 'resolved' ? 'Marked resolved on this device' : 'Waiting for the next signal of kindness');
+    const openButton = element('button', 'detail-button', 'View details ↗');
     openButton.type = 'button';
     openButton.dataset.postId = post.id;
-    openButton.setAttribute('aria-label', `查看详情：${post.title}`);
+    openButton.setAttribute('aria-label', `View details: ${post.title}`);
     footer.append(hint, openButton);
     card.append(top, title, body, meta, footer);
     fragment.append(card);
@@ -107,25 +107,25 @@ function openDetail(id) {
   $('#detail-title').textContent = post.title;
   $('#detail-meta').textContent = `${categoryLabel(post.category)} · ${post.district} · ${formatDate(post.createdAt)}`;
   $('#detail-body').textContent = post.body;
-  $('#matches-title').textContent = post.kind === 'request' ? '可能提供帮助的邻居' : '可能需要这份资源的邻居';
+  $('#matches-title').textContent = post.kind === 'request' ? 'Neighbors who might be able to help' : 'Neighbors who might need this';
   const matches = post.status === 'open' ? findMatches(post, state.posts) : [];
   const nodes = matches.map((match) => {
     const node = element('button', 'match-card');
     node.type = 'button';
     node.dataset.postId = match.id;
     const title = element('strong', '', match.title);
-    const reasons = Array.isArray(match.matchReasons) ? match.matchReasons.join(' · ') : '相关资源';
+    const reasons = Array.isArray(match.matchReasons) ? match.matchReasons.join(' · ') : 'Related resource';
     node.append(title, element('span', '', `${match.district} · ${reasons} ↗`));
     return node;
   });
-  if (!nodes.length) nodes.push(element('p', 'no-matches', post.status === 'resolved' ? '这条公告已完成。重新开启后将继续寻找匹配。' : '目前没有合适的本地公告。导入邻居的数据，或稍后再看看。'));
+  if (!nodes.length) nodes.push(element('p', 'no-matches', post.status === 'resolved' ? 'This post is resolved. Reopen it to resume matching.' : 'No matching local posts yet. Import a neighbor\'s data or check back later.'));
   $('#matches').replaceChildren(...nodes);
-  $('#resolve-button').textContent = post.status === 'resolved' ? '重新开启这条公告' : '✓ 标记为已完成';
+  $('#resolve-button').textContent = post.status === 'resolved' ? 'Reopen this post' : '✓ Mark as resolved';
   if (!$('#detail-dialog').open) $('#detail-dialog').showModal();
 }
 
 function updateConnection() {
-  $('#connection').textContent = navigator.onLine ? '设备在线 · 公告在本地' : '设备离线 · 仍可读写公告';
+  $('#connection').textContent = navigator.onLine ? 'Device online · Posts saved locally' : 'Device offline · Posts still readable';
 }
 
 $('#kind-nav').addEventListener('click', (event) => {
@@ -152,7 +152,7 @@ document.querySelectorAll('[data-close]').forEach((button) => button.addEventLis
 $('#post-form').addEventListener('submit', (event) => {
   event.preventDefault();
   try {
-    if (state.posts.length >= 1000) throw new Error('本地节点最多保存 1000 条公告，请先导出归档。');
+    if (state.posts.length >= 1000) throw new Error('This node can hold at most 1,000 posts — please export an archive first.');
     const post = createPost(Object.fromEntries(new FormData(event.currentTarget)));
     state.posts = [post, ...state.posts];
     const saved = savePosts();
@@ -160,9 +160,9 @@ $('#post-form').addEventListener('submit', (event) => {
     state.kind = 'all'; state.status = 'all'; state.query = '';
     $('#search').value = ''; $('#status-filter').value = 'all';
     render();
-    if (saved) notify('公告已保存到本地节点。可以导出数据，与邻居分享。');
+    if (saved) notify('Post saved to local node. Export your data to share it with a neighbor.');
   } catch (error) {
-    $('#form-error').textContent = error.message || '请检查公告内容后重试。';
+    $('#form-error').textContent = error.message || 'Please review the post and try again.';
     $('#form-error').hidden = false;
   }
 });
@@ -178,7 +178,7 @@ $('#resolve-button').addEventListener('click', () => {
   post.status = post.status === 'resolved' ? 'open' : 'resolved';
   const saved = savePosts();
   render(); openDetail(post.id);
-  if (saved) notify(post.status === 'resolved' ? '这条公告已完成。谢谢你接住这段信号。' : '公告已重新开启。');
+  if (saved) notify(post.status === 'resolved' ? 'Post marked as resolved. Thanks for catching that signal.' : 'Post reopened.');
 });
 $('#export-button').addEventListener('click', () => {
   const data = new Blob([serializePosts(state.posts)], { type: 'application/json;charset=utf-8' });
@@ -188,21 +188,22 @@ $('#export-button').addEventListener('click', () => {
   anchor.href = url; anchor.download = `afterlight-node-${stamp}.json`;
   document.body.append(anchor); anchor.click(); anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  notify('节点数据已导出。将文件交给邻居，即可在对方设备导入。');
+  notify('Node data exported. Hand the file to a neighbor so they can import it on their device.');
 });
 
-// ── 导入冲突预览 ──────────────────────────────────────────────────
-// importSession 保存当前预览会话的数据快照与分析结果，防止用户在预览期间改变数据导致覆写。
+// ── Import conflict preview ───────────────────────────────────────
+// importSession holds a snapshot and analysis result for the current preview,
+// preventing stale data from being written if local posts change during review.
 let importSession = null;
 
 function fieldLabel(key) {
-  const labels = { kind: '类型', title: '标题', category: '分类', district: '街区', body: '正文', status: '状态' };
+  const labels = { kind: 'Type', title: 'Title', category: 'Category', district: 'Neighborhood', body: 'Details', status: 'Status' };
   return labels[key] || key;
 }
 
 function fieldValue(key, value) {
-  if (key === 'kind') return value === 'request' ? '↗ 需要帮助' : '↙ 可以提供';
-  if (key === 'status') return value === 'resolved' ? '✓ 已完成' : '进行中';
+  if (key === 'kind') return value === 'request' ? '↗ Request' : '↙ Offer';
+  if (key === 'status') return value === 'resolved' ? '✓ Resolved' : 'Open';
   if (key === 'category') return CATEGORIES[value] || value;
   return value;
 }
@@ -212,10 +213,10 @@ function openImportPreview(analysis, snapshotPosts) {
   const { added, unchanged, conflicts } = analysis;
 
   const parts = [];
-  if (added.length) parts.push(`新增 ${added.length} 条`);
-  if (conflicts.length) parts.push(`冲突 ${conflicts.length} 条（需选择）`);
-  if (unchanged.length) parts.push(`重复 ${unchanged.length} 条（将跳过）`);
-  $('#import-preview-summary').textContent = parts.length ? parts.join(' · ') : '没有需要新增或更新的公告。';
+  if (added.length) parts.push(`${added.length} new`);
+  if (conflicts.length) parts.push(`${conflicts.length} conflict${conflicts.length !== 1 ? 's' : ''} (need decision)`);
+  if (unchanged.length) parts.push(`${unchanged.length} duplicate${unchanged.length !== 1 ? 's' : ''} (will skip)`);
+  $('#import-preview-summary').textContent = parts.length ? parts.join(' · ') : 'Nothing new to add or update.';
 
   const conflictsSection = $('#import-conflicts-section');
   conflictsSection.hidden = conflicts.length === 0;
@@ -229,10 +230,10 @@ function openImportPreview(analysis, snapshotPosts) {
     const fieldsEl = element('ul', 'conflict-fields');
     for (const key of conflict.changedFields) {
       const li = element('li', '');
-      const label = element('span', 'conflict-field-label', `${fieldLabel(key)}：`);
-      const localVal = element('span', 'conflict-local', `本地：${fieldValue(key, conflict.local[key])}`);
+      const label = element('span', 'conflict-field-label', `${fieldLabel(key)}: `);
+      const localVal = element('span', 'conflict-local', `Local: ${fieldValue(key, conflict.local[key])}`);
       const sep = element('span', 'conflict-sep', ' → ');
-      const incomingVal = element('span', 'conflict-incoming', `导入：${fieldValue(key, conflict.incoming[key])}`);
+      const incomingVal = element('span', 'conflict-incoming', `Import: ${fieldValue(key, conflict.incoming[key])}`);
       li.append(label, localVal, sep, incomingVal);
       fieldsEl.append(li);
     }
@@ -244,11 +245,11 @@ function openImportPreview(analysis, snapshotPosts) {
       radio.name = `conflict-${conflict.id}`;
       radio.value = value;
       radio.checked = value === 'local';
-      radio.setAttribute('aria-label', `${conflict.local.title}：${value === 'local' ? '保留本地版本' : '采用导入版本'}`);
-      label.append(radio, document.createTextNode(value === 'local' ? ' 保留本地版本' : ' 采用导入版本'));
+      radio.setAttribute('aria-label', `${conflict.local.title}: ${value === 'local' ? 'Keep local version' : 'Use imported version'}`);
+      label.append(radio, document.createTextNode(value === 'local' ? ' Keep local' : ' Use imported'));
       choiceRow.append(label);
     }
-    // 监听选择变化，更新 decisions 记录
+    // Track per-conflict decisions as the user makes choices
     choiceRow.addEventListener('change', (event) => {
       if (event.target.name === `conflict-${conflict.id}` && importSession) {
         importSession.decisions[conflict.id] = event.target.value;
@@ -274,7 +275,7 @@ $('#import-preview-dialog').addEventListener('cancel', closeImportPreview);
 
 $('#import-preview-confirm').addEventListener('click', () => {
   if (!importSession) return;
-  // 若预览期间本地数据已变化，重新分析并提示用户再次确认。
+  // If local posts changed while the preview was open, re-analyse and ask the user to confirm again.
   const currentSerialized = serializePosts(state.posts);
   const snapshotSerialized = serializePosts(importSession.snapshot);
   if (currentSerialized !== snapshotSerialized) {
@@ -286,7 +287,7 @@ $('#import-preview-confirm').addEventListener('click', () => {
     const freshAnalysis = analyzeImport(state.posts, allIncoming);
     importSession = null;
     if ($('#import-preview-dialog').open) $('#import-preview-dialog').close();
-    notify('导入期间本地数据已更新，已重新分析。请再次确认。');
+    notify('Local data changed during preview — re-analysed. Please review and confirm again.');
     openImportPreview(freshAnalysis, [...state.posts]);
     return;
   }
@@ -299,9 +300,9 @@ $('#import-preview-confirm').addEventListener('click', () => {
     const saved = savePosts();
     closeImportPreview();
     render();
-    if (saved) notify(`导入完成：新增 ${newPosts} 条，替换 ${replaced} 条，跳过重复 ${skipped} 条。`);
+    if (saved) notify(`Import complete: ${newPosts} added, ${replaced} replaced, ${skipped} duplicate${skipped !== 1 ? 's' : ''} skipped.`);
   } catch (error) {
-    $('#import-preview-error').textContent = error.message || '导入时发生错误，请重试。';
+    $('#import-preview-error').textContent = error.message || 'An error occurred during import. Please try again.';
     $('#import-preview-error').hidden = false;
   }
 });
@@ -311,17 +312,17 @@ $('#import-file').addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    if (file.size > MAX_IMPORT_BYTES) throw new Error('文件超过 16 MB，请选择更小的节点备份。');
+    if (file.size > MAX_IMPORT_BYTES) throw new Error('File exceeds 16 MB — please choose a smaller node backup.');
     const imported = parseImport(await file.text());
     const analysis = analyzeImport(state.posts, imported);
-    // 全部为重复时，无需打开预览，直接给出反馈。
+    // If everything is a duplicate, skip the preview and give immediate feedback.
     if (analysis.added.length === 0 && analysis.conflicts.length === 0) {
-      notify(`导入文件中 ${analysis.unchanged.length} 条公告均已在本地，没有新内容。`);
+      notify(`All ${analysis.unchanged.length} post${analysis.unchanged.length !== 1 ? 's' : ''} in the file already exist locally — nothing new to import.`);
       return;
     }
     openImportPreview(analysis, [...state.posts]);
   } catch (error) {
-    notify(`导入失败：${error.message || '请检查 JSON 文件格式。'}`);
+    notify(`Import failed: ${error.message || 'Please check the JSON file format.'}`);
   } finally { event.target.value = ''; }
 });
 
@@ -331,15 +332,15 @@ $('#confirm-reset').addEventListener('click', () => {
   const saved = savePosts();
   $('#reset-dialog').close();
   render();
-  if (saved) notify('已恢复示例公告。');
+  if (saved) notify('Example posts restored.');
 });
 
-// 多窗口修改时重新读取，避免界面继续显示过期的本地状态。
+// When another window modifies storage, reload to avoid showing stale data.
 window.addEventListener('storage', (event) => {
   if (event.key !== STORAGE_KEY) return;
   loadPosts(); render();
   if ($('#detail-dialog').open) $('#detail-dialog').close();
-  notify('已同步此设备另一窗口的公告变更。');
+  notify('Posts synced from another window on this device.');
 });
 window.addEventListener('online', updateConnection);
 window.addEventListener('offline', updateConnection);
@@ -356,8 +357,8 @@ updateConnection();
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(() => navigator.serviceWorker.ready).then(() => {
-    $('#offline-ready').textContent = '✦ 离线缓存已就绪 · 无需登录';
+    $('#offline-ready').textContent = '✦ Offline cache ready · No login needed';
   }).catch(() => {
-    $('#offline-ready').textContent = '✦ 本地保存 · 离线缓存暂不可用';
+    $('#offline-ready').textContent = '✦ Saved locally · Offline cache unavailable';
   });
 }

@@ -1,7 +1,8 @@
 export const CATEGORIES = Object.freeze({ supplies: '生活物资', power: '供电通信', transport: '出行运输', shelter: '临时空间', other: '其他互助' });
 export const DISTRICTS = ['灯塔街区', '旧港街区', '北站街区', '河岸街区'];
 const MAX_POSTS = 1000;
-const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+// 1000 条、每条 2000 中文字的合法导出也能重新导入。
+export const MAX_IMPORT_BYTES = 16 * 1024 * 1024;
 const own = (object, key) => Object.hasOwn(object, key);
 
 function textField(value, label, min, max) {
@@ -67,7 +68,7 @@ function validateStoredPost(input) {
 }
 
 export function parseImport(text) {
-  if (typeof text !== 'string' || new TextEncoder().encode(text).byteLength > MAX_IMPORT_BYTES) throw new Error('文件须为不超过 2 MB 的 JSON 文本');
+  if (typeof text !== 'string' || new TextEncoder().encode(text).byteLength > MAX_IMPORT_BYTES) throw new Error('文件须为不超过 16 MB 的 JSON 文本');
   let data;
   try { data = JSON.parse(text); } catch { throw new Error('JSON 文件无法解析'); }
   if (!data || data.schemaVersion !== 1 || !Array.isArray(data.posts)) throw new Error('请选择 Afterlight BBS 导出的 v1 数据文件');

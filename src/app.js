@@ -1,5 +1,5 @@
 import './styles.css';
-import { seedPosts, createPost, filterPosts, findMatches, parseImport, mergePosts, serializePosts, CATEGORIES, DISTRICTS } from './domain.js';
+import { seedPosts, createPost, filterPosts, findMatches, parseImport, mergePosts, serializePosts, CATEGORIES, DISTRICTS, MAX_IMPORT_BYTES } from './domain.js';
 
 const STORAGE_KEY = 'afterlight-bbs-posts-v1';
 const $ = (selector) => document.querySelector(selector);
@@ -85,7 +85,7 @@ function render() {
     meta.append(location, time);
     const footer = element('div', 'card-footer');
     const matches = post.status === 'open' ? findMatches(post, all) : [];
-    const hint = element('span', `match-hint ${matches.length ? '' : 'no-match'}`, matches.length ? `✦ ${matches.length} 条可能匹配` : post.status === 'resolved' ? '这条消息已有回应' : '等待下一段善意的信号');
+    const hint = element('span', `match-hint ${matches.length ? '' : 'no-match'}`, matches.length ? `✦ ${matches.length} 条可能匹配` : post.status === 'resolved' ? '已由本机标记完成' : '等待下一段善意的信号');
     const openButton = element('button', 'detail-button', '查看详情 ↗');
     openButton.type = 'button';
     openButton.dataset.postId = post.id;
@@ -195,7 +195,7 @@ $('#import-file').addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    if (file.size > 2 * 1024 * 1024) throw new Error('文件超过 2 MB，请选择更小的节点备份。');
+    if (file.size > MAX_IMPORT_BYTES) throw new Error('文件超过 16 MB，请选择更小的节点备份。');
     const imported = parseImport(await file.text());
     const previous = state.posts.length;
     state.posts = mergePosts(state.posts, imported);

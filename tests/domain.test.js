@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPost, seedPosts, filterPosts, findMatches, parseImport, mergePosts, serializePosts } from '../src/domain.js';
+import { createPost, seedPosts, filterPosts, findMatches, parseImport, mergePosts, serializePosts, MAX_IMPORT_BYTES } from '../src/domain.js';
 
 test('新公告校验、唯一编号与默认状态', () => {
   const input = seedPosts()[0];
@@ -35,9 +35,15 @@ test('导出与导入往返一致，并剥离未知字段', () => {
 });
 
 test('畸形和过大导入整体拒绝，不接受重复或不合法数据', () => {
-  for (const text of ['not json', '{}', 'null', JSON.stringify({ schemaVersion: 2, posts: [] }), ' '.repeat(2 * 1024 * 1024 + 1)]) assert.throws(() => parseImport(text));
+  for (const text of ['not json', '{}', 'null', JSON.stringify({ schemaVersion: 2, posts: [] }), ' '.repeat(MAX_IMPORT_BYTES + 1)]) assert.throws(() => parseImport(text));
   const post = seedPosts()[0];
   for (const posts of [[post, post], [{ ...post, status: 'done' }], [{ ...post, createdAt: 'broken' }], [{ ...post, id: '../escape' }], Array(1001).fill(post)]) assert.throws(() => parseImport(JSON.stringify({ schemaVersion: 1, posts })));
+});
+
+test('合法最大正文的整批公告可导出后重新导入', () => {
+  const template = seedPosts()[0];
+  const posts = Array.from({ length: 1000 }, (_, index) => ({ ...template, id: `large-${index}`, body: '邻'.repeat(2000) }));
+  assert.deepEqual(parseImport(serializePosts(posts)), posts);
 });
 
 test('合并幂等、不改写本地同编号公告，超过容量报错', () => {

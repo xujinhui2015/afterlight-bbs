@@ -1,33 +1,33 @@
-# Afterlight BBS · 余烬公告板
+# Afterlight BBS
 
-[English documentation](README.en.md) · [在线演示](https://xujinhui2015.github.io/afterlight-bbs/) · [GitHub 仓库](https://github.com/xujinhui2015/afterlight-bbs)
+[中文说明](README.zh.md) · [Live demo](https://xujinhui2015.github.io/afterlight-bbs/) · [GitHub repository](https://github.com/xujinhui2015/afterlight-bbs)
 
-让拨号时代的社区公告板，在断网的今天继续发光。
+Bring the community bulletin board of the dial-up era back to life, with local tools for neighbors to organize requests and available resources.
 
-Afterlight BBS 是为 **Kiroween 2026 / Resurrection** 新建的开源项目：用复古终端的阅读体验，重新组织邻里求助与资源信息。初版完全在浏览器本地运行，无需账户、API Key 或远程服务。
+Afterlight BBS is a new open-source project intended for **Kiroween 2026 / Resurrection**. The prototype runs entirely in the browser, without an account, API key, or application backend.
 
-## 初版功能
+## Prototype features
 
-- 发布求助或可提供的资源，记录分类、区域与详细说明。
-- 按类型、处理状态和关键词查找公告。
-- 根据分类、区域与文本相似信息寻找相关公告，并解释匹配理由。
-- 标记已解决、重新开启公告。
-- 浏览器本地保存，JSON 导出备份与导入合并。
-- PWA 离线缓存：已实现首次在线加载后的资源缓存；完整断网刷新能力仍待进一步浏览器验收。
-- 响应式界面、键盘操作与中文说明。
+- Publish a request or offer with a category, neighborhood, and description.
+- Search posts and filter by type and completion status.
+- Find related posts using transparent category, neighborhood, and keyword rules.
+- Mark posts as completed and reopen them.
+- Save locally in the browser and export or merge JSON backups.
+- Cache production assets with a Service Worker; complete offline reload verification remains pending.
+- Responsive English interface with keyboard controls.
 
-这是本地交互原型：不同设备之间不会自动同步，匹配是可解释的规则计算，也没有人员响应或信息核验保证。请勿将其当作实时救援服务；示例数据仅用于演示。
+This is a local prototype. Devices do not synchronize automatically, matching does not use an online AI service, and no human response or information verification is guaranteed. It is not an emergency response service. All example posts are fictional.
 
-## 本地运行
+## Run locally
 
-依赖：Node.js 22.12 或更新版本，以及 npm。
+Requirements: **Node.js 22.12 or later** and npm.
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-访问终端输出的本地地址。开发服务器主要用于调试；离线能力请用生产构建验证。
+Open the local URL printed in the terminal. The development server is for development; use a production build to investigate offline behavior.
 
 ```powershell
 npm test
@@ -35,37 +35,44 @@ npm run build
 npm run preview
 ```
 
-构建产物位于 `dist/`，可发布到支持 HTTPS 的静态托管服务。构建使用相对资源路径，以支持 GitHub Pages 的仓库子路径。`localhost` 也支持 Service Worker；普通 HTTP 公网地址不支持。
+Production files are written to `dist/`. The application uses relative asset paths to support GitHub Pages repository subpaths. Service Workers require HTTPS or localhost.
 
-当前验证：核心测试与生产构建通过，发布、搜索、状态切换和刷新保存已在内置浏览器中操作验证。离线缓存提示就绪后，关闭本地服务器再刷新未能恢复完整界面；离线浏览器验收尚未完成，需要在常用浏览器中继续排查和验证。
+## Verification status
 
-## 演示流程
+The core tests and production build pass. Publishing, search, status changes, and persistence across refresh were exercised in the in-app browser. The public demo has been deployed.
 
-1. 浏览示例公告，搜索一个区域或物资关键词。
-2. 发布一条求助，打开详情并查看匹配理由。
-3. 将公告标记为已解决，再重新开启。
-4. 导出 JSON；导入同一文件，确认没有重复公告。
-5. 在线打开生产预览，等待离线缓存完成；刷新后断网访问并继续操作。
+**Offline verification is incomplete.** Although the application reports that its cache is ready, refreshing after stopping the local preview server did not restore the complete interface in the in-app browser. This behavior needs further investigation and testing in a regular browser. The repository does not claim that offline browser acceptance has passed.
 
-## Kiro 与参赛状态
+## Testing the interface
 
-本项目于 **2026 年 11 月 6 日** 开始创建，于 **2026 年 11 月 7 日** 使用 **Kiro CLI**（`kiro-cli chat`）完成导入冲突预览功能。
+1. The initial board contains fictional example posts. Use the search field to search for `lanterns` or `Lighthouse District`.
+2. Click **New post**. Choose **I need help** (Request) or **I can offer** (Offer). Fill in Title, Category, Neighborhood, and Details. Submit with **Publish to local node**.
+3. Click **View details** on a post. Related posts display match reasons such as same category, neighborhood, or similar keywords. They are suggestions, not confirmed arrangements.
+4. Click **Mark as resolved**, then **Reopen this post**. Refresh and confirm the post is still saved.
+5. Click **Export node data**, then **Import neighbor's data** and select that JSON file. A preview dialog appears showing new posts, conflicts, and duplicates. For each conflict choose **Keep local** or **Use imported**. Click **Confirm import** to apply, or **Cancel** — cancelling never changes local data. Importing the same file again reports that all posts already exist locally.
+6. **Restore example posts** requires confirmation and replaces all local posts. Export a backup first if the data matters.
+7. For offline acceptance, load the production preview online and wait for the "Offline cache ready" message. Then test refresh and read/write without the server or network.
 
-`.kiro/specs/import-conflict-review/` 规格驱动了本轮开发：Kiro 读取需求、设计与任务文档，在 `src/domain.js` 中实现了 `analyzeImport` 和 `applyImportPlan` 两个纯函数，并在 `index.html`、`src/app.js`、`src/styles.css` 中接入了预览对话框，最后补充了 4 个测试用例并通过全部 14 项测试和生产构建。
+## Kiro and submission status
 
-`.kiro/steering/product.md` 在整个开发会话中始终注入，约束了语言、安全文本渲染与离线兼容要求。
+This project started on **November 6, 2026**. The initial prototype was created by Codex. On **November 7, 2026**, **Kiro CLI** (`kiro-cli chat`) was used to implement the import conflict preview feature, driven by the spec in `.kiro/specs/import-conflict-review/`.
 
-详细记录见 [Kiro 工作记录](docs/kiro-worklog.md) 和 [提交草稿](docs/submission.md)。
+Kiro read the requirements, design, and tasks documents, then implemented `analyzeImport` and `applyImportPlan` pure functions in `src/domain.js`, added the preview dialog in `index.html`, `src/app.js`, and `src/styles.css`, and added 4 test cases. All 14 tests pass and the production build succeeds.
 
-[比赛官方页面](https://kiroween.devpost.com/)列出的提交截止为 2026 年 12 月 4 日 14:00 PST，即北京时间 **2026 年 12 月 5 日 06:00**。最终规则与资格以官方页面为准。GitHub 仓库准备不等于完成 Devpost 提交。
+The steering file `.kiro/steering/product.md` was active throughout the session, enforcing language, safe text rendering, and offline compatibility rules.
 
-## 目录
+See the [Kiro work log](docs/kiro-worklog.md) and [submission draft](docs/submission.md) for details.
+
+The [official event page](https://kiroween.devpost.com/) lists the deadline as **December 4, 2026, 2:00 PM PST**. Official rules govern eligibility and requirements. Preparing a GitHub repository does not complete a Devpost submission.
+
+## Structure and license
 
 ```text
-.kiro/                 Kiro 规格与项目约束
-docs/                  架构、实际开发记录及参赛草稿
-public/                离线缓存及应用图标
-src/                   界面与领域逻辑
+.kiro/   Prepared Kiro specifications and project guidance
+docs/    Architecture, development records, and submission drafts
+public/  Service Worker, manifest, and application icon
+src/     Interface and domain logic
+tests/   Automated checks
 ```
 
-技术边界与数据流见 [架构说明](docs/architecture.md)。本项目采用 [MIT License](LICENSE)。
+The project is available under the [MIT License](LICENSE). Architecture notes are in [docs/architecture.md](docs/architecture.md).

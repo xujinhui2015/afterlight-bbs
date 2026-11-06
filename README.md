@@ -49,9 +49,13 @@ npm run preview
 
 ## Kiro 与参赛状态
 
-本项目于 **2026 年 11 月 6 日** 开始创建。当前初版由 Codex 编写，**尚无真实 Kiro 开发使用记录**。根目录 `.kiro/` 提供后续在 Kiro 中继续开发的规格与 steering 文档；文件的存在本身不代表已经使用 Kiro。
+本项目于 **2026 年 11 月 6 日** 开始创建，于 **2026 年 11 月 7 日** 使用 **Kiro CLI**（`kiro-cli chat`）完成导入冲突预览功能。
 
-正式参赛前，需使用 Kiro 实际完成开发任务，保留可核实的过程，并填写真实使用说明。参见 [Kiro 工作记录](docs/kiro-worklog.md) 和 [提交草稿及待办](docs/submission.md)。
+`.kiro/specs/import-conflict-review/` 规格驱动了本轮开发：Kiro 读取需求、设计与任务文档，在 `src/domain.js` 中实现了 `analyzeImport` 和 `applyImportPlan` 两个纯函数，并在 `index.html`、`src/app.js`、`src/styles.css` 中接入了预览对话框，最后补充了 4 个测试用例并通过全部 14 项测试和生产构建。
+
+`.kiro/steering/product.md` 在整个开发会话中始终注入，约束了语言、安全文本渲染与离线兼容要求。
+
+详细记录见 [Kiro 工作记录](docs/kiro-worklog.md) 和 [提交草稿](docs/submission.md)。
 
 [比赛官方页面](https://kiroween.devpost.com/)列出的提交截止为 2026 年 12 月 4 日 14:00 PST，即北京时间 **2026 年 12 月 5 日 06:00**。最终规则与资格以官方页面为准。GitHub 仓库准备不等于完成 Devpost 提交。
 

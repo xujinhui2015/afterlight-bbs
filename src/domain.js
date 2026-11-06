@@ -88,6 +88,56 @@ export function mergePosts(existing, incoming) {
   return filterPosts(merged);
 }
 
+// 比较公告时使用明确字段列表，避免对象键顺序影响结果。
+const COMPARE_FIELDS = ['kind', 'title', 'category', 'district', 'body', 'status'];
+
+function postsEqual(a, b) {
+  return COMPARE_FIELDS.every(key => a[key] === b[key]);
+}
+
+/**
+ * 分析导入数据，返回新增、重复与冲突的分类结果，不修改任何数据。
+ * @param {object[]} existing 当前本地公告数组
+ * @param {object[]} incoming 已通过 parseImport 校验的导入公告数组
+ * @returns {{ added: object[], unchanged: object[], conflicts: Array<{id: string, local: object, incoming: object, changedFields: string[]}> }}
+ */
+export function analyzeImport(existing, incoming) {
+  const localMap = new Map(existing.map(post => [post.id, post]));
+  const added = [];
+  const unchanged = [];
+  const conflicts = [];
+  for (const post of incoming) {
+    const local = localMap.get(post.id);
+    if (!local) {
+      added.push(post);
+    } else if (postsEqual(local, post)) {
+      unchanged.push(post);
+    } else {
+      const changedFields = COMPARE_FIELDS.filter(key => local[key] !== post[key]);
+      conflicts.push({ id: post.id, local, incoming: post, changedFields });
+    }
+  }
+  return { added, unchanged, conflicts };
+}
+
+/**
+ * 根据分析结果与用户对冲突的明确选择，生成新的公告数组，不修改传入数组。
+ * @param {object[]} existing 做出决策时的本地公告快照
+ * @param {{ added: object[], conflicts: Array<{id: string, local: object, incoming: object}> }} analysis analyzeImport 的返回值
+ * @param {Record<string, 'local' | 'incoming'>} decisions 每个冲突 ID 的选择，默认保留本地版
+ * @returns {object[]}
+ */
+export function applyImportPlan(existing, analysis, decisions) {
+  const result = existing.map(post => {
+    const conflict = analysis.conflicts.find(c => c.id === post.id);
+    if (!conflict) return post;
+    return decisions[post.id] === 'incoming' ? conflict.incoming : post;
+  });
+  for (const post of analysis.added) result.push(post);
+  if (result.length > MAX_POSTS) throw new Error('公告总数不能超过 1000 条，请先导出归档');
+  return filterPosts(result);
+}
+
 export function serializePosts(posts) {
   if (!Array.isArray(posts) || posts.length > MAX_POSTS) throw new Error('导出公告数量无效');
   return JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), posts: posts.map(validateStoredPost) }, null, 2);

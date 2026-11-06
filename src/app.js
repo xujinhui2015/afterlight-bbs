@@ -1,5 +1,5 @@
 import './styles.css';
-import { seedPosts, createPost, filterPosts, findMatches, parseImport, mergePosts, serializePosts, CATEGORIES, DISTRICTS, MAX_IMPORT_BYTES } from './domain.js';
+import { seedPosts, createPost, filterPosts, findMatches, parseImport, mergePosts, analyzeImport, applyImportPlan, serializePosts, CATEGORIES, DISTRICTS, MAX_IMPORT_BYTES } from './domain.js';
 
 const STORAGE_KEY = 'afterlight-bbs-posts-v1';
 const $ = (selector) => document.querySelector(selector);
@@ -190,6 +190,122 @@ $('#export-button').addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   notify('节点数据已导出。将文件交给邻居，即可在对方设备导入。');
 });
+
+// ── 导入冲突预览 ──────────────────────────────────────────────────
+// importSession 保存当前预览会话的数据快照与分析结果，防止用户在预览期间改变数据导致覆写。
+let importSession = null;
+
+function fieldLabel(key) {
+  const labels = { kind: '类型', title: '标题', category: '分类', district: '街区', body: '正文', status: '状态' };
+  return labels[key] || key;
+}
+
+function fieldValue(key, value) {
+  if (key === 'kind') return value === 'request' ? '↗ 需要帮助' : '↙ 可以提供';
+  if (key === 'status') return value === 'resolved' ? '✓ 已完成' : '进行中';
+  if (key === 'category') return CATEGORIES[value] || value;
+  return value;
+}
+
+function openImportPreview(analysis, snapshotPosts) {
+  importSession = { analysis, snapshot: snapshotPosts, decisions: {} };
+  const { added, unchanged, conflicts } = analysis;
+
+  const parts = [];
+  if (added.length) parts.push(`新增 ${added.length} 条`);
+  if (conflicts.length) parts.push(`冲突 ${conflicts.length} 条（需选择）`);
+  if (unchanged.length) parts.push(`重复 ${unchanged.length} 条（将跳过）`);
+  $('#import-preview-summary').textContent = parts.length ? parts.join(' · ') : '没有需要新增或更新的公告。';
+
+  const conflictsSection = $('#import-conflicts-section');
+  conflictsSection.hidden = conflicts.length === 0;
+  const list = $('#import-conflicts-list');
+  list.replaceChildren();
+
+  for (const conflict of conflicts) {
+    const item = element('div', 'conflict-item');
+    item.setAttribute('role', 'listitem');
+    item.append(element('strong', 'conflict-title', conflict.local.title));
+    const fieldsEl = element('ul', 'conflict-fields');
+    for (const key of conflict.changedFields) {
+      const li = element('li', '');
+      const label = element('span', 'conflict-field-label', `${fieldLabel(key)}：`);
+      const localVal = element('span', 'conflict-local', `本地：${fieldValue(key, conflict.local[key])}`);
+      const sep = element('span', 'conflict-sep', ' → ');
+      const incomingVal = element('span', 'conflict-incoming', `导入：${fieldValue(key, conflict.incoming[key])}`);
+      li.append(label, localVal, sep, incomingVal);
+      fieldsEl.append(li);
+    }
+    const choiceRow = element('div', 'conflict-choice');
+    for (const value of ['local', 'incoming']) {
+      const label = element('label', 'conflict-option');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = `conflict-${conflict.id}`;
+      radio.value = value;
+      radio.checked = value === 'local';
+      radio.setAttribute('aria-label', `${conflict.local.title}：${value === 'local' ? '保留本地版本' : '采用导入版本'}`);
+      label.append(radio, document.createTextNode(value === 'local' ? ' 保留本地版本' : ' 采用导入版本'));
+      choiceRow.append(label);
+    }
+    // 监听选择变化，更新 decisions 记录
+    choiceRow.addEventListener('change', (event) => {
+      if (event.target.name === `conflict-${conflict.id}` && importSession) {
+        importSession.decisions[conflict.id] = event.target.value;
+      }
+    });
+    item.append(fieldsEl, choiceRow);
+    list.append(item);
+  }
+
+  $('#import-preview-error').hidden = true;
+  if (!$('#import-preview-dialog').open) $('#import-preview-dialog').showModal();
+}
+
+function closeImportPreview() {
+  importSession = null;
+  if ($('#import-preview-dialog').open) $('#import-preview-dialog').close();
+  $('#import-button').focus();
+}
+
+$('#import-preview-close').addEventListener('click', closeImportPreview);
+$('#import-preview-cancel').addEventListener('click', closeImportPreview);
+$('#import-preview-dialog').addEventListener('cancel', closeImportPreview);
+
+$('#import-preview-confirm').addEventListener('click', () => {
+  if (!importSession) return;
+  // 若预览期间本地数据已变化，重新分析并提示用户再次确认。
+  const currentSerialized = serializePosts(state.posts);
+  const snapshotSerialized = serializePosts(importSession.snapshot);
+  if (currentSerialized !== snapshotSerialized) {
+    const allIncoming = [
+      ...importSession.analysis.added,
+      ...importSession.analysis.unchanged,
+      ...importSession.analysis.conflicts.map(c => c.incoming),
+    ];
+    const freshAnalysis = analyzeImport(state.posts, allIncoming);
+    importSession = null;
+    if ($('#import-preview-dialog').open) $('#import-preview-dialog').close();
+    notify('导入期间本地数据已更新，已重新分析。请再次确认。');
+    openImportPreview(freshAnalysis, [...state.posts]);
+    return;
+  }
+  try {
+    const prevCount = importSession.snapshot.length;
+    state.posts = applyImportPlan(importSession.snapshot, importSession.analysis, importSession.decisions);
+    const newPosts = state.posts.length - prevCount;
+    const replaced = importSession.analysis.conflicts.filter(c => importSession.decisions[c.id] === 'incoming').length;
+    const skipped = importSession.analysis.unchanged.length;
+    const saved = savePosts();
+    closeImportPreview();
+    render();
+    if (saved) notify(`导入完成：新增 ${newPosts} 条，替换 ${replaced} 条，跳过重复 ${skipped} 条。`);
+  } catch (error) {
+    $('#import-preview-error').textContent = error.message || '导入时发生错误，请重试。';
+    $('#import-preview-error').hidden = false;
+  }
+});
+
 $('#import-button').addEventListener('click', () => $('#import-file').click());
 $('#import-file').addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
@@ -197,15 +313,18 @@ $('#import-file').addEventListener('change', async (event) => {
   try {
     if (file.size > MAX_IMPORT_BYTES) throw new Error('文件超过 16 MB，请选择更小的节点备份。');
     const imported = parseImport(await file.text());
-    const previous = state.posts.length;
-    state.posts = mergePosts(state.posts, imported);
-    const saved = savePosts();
-    render();
-    if (saved) notify(`导入完成，新增 ${state.posts.length - previous} 条公告。同 ID 的本地公告已保留。`);
+    const analysis = analyzeImport(state.posts, imported);
+    // 全部为重复时，无需打开预览，直接给出反馈。
+    if (analysis.added.length === 0 && analysis.conflicts.length === 0) {
+      notify(`导入文件中 ${analysis.unchanged.length} 条公告均已在本地，没有新内容。`);
+      return;
+    }
+    openImportPreview(analysis, [...state.posts]);
   } catch (error) {
     notify(`导入失败：${error.message || '请检查 JSON 文件格式。'}`);
   } finally { event.target.value = ''; }
 });
+
 $('#reset-button').addEventListener('click', () => $('#reset-dialog').showModal());
 $('#confirm-reset').addEventListener('click', () => {
   state.posts = seedPosts();
